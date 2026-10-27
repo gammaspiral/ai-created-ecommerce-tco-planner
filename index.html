@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>eCommmerce TCO Planner</title>
+<style>
+:root {
+  --bg:#f4f6fa;--panel:#fff;--ink:#182338;--muted:#657187;
+  --line:#dfe5ee;--blue:#315ee7;--green:#087a50;--greenbg:#e7f7ef;
+  --red:#b63b3b;--redbg:#fff0f0;
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink)}
+header{background:#14213b;color:white;padding:32px 18px;text-align:center}
+header h1{font-size:clamp(26px,4vw,38px);margin:0 0 10px}
+header p{color:#d7dfef;line-height:1.6;max-width:780px;margin:auto}
+main{max-width:1250px;margin:auto;padding:20px 14px 50px}
+h2{font-size:20px;margin:0 0 14px}
+h3{font-size:16px;margin:0 0 12px}
+p{line-height:1.5}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:20px;margin-bottom:18px}
+.grid{display:grid;gap:14px}
+.inputs{grid-template-columns:repeat(4,minmax(0,1fr))}
+.platforms{grid-template-columns:repeat(2,minmax(0,1fr))}
+.metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
+label{display:block;font-size:12px;font-weight:700;color:#4d5b70;margin-bottom:6px}
+input,select,button{font:inherit;border:1px solid #ccd5e3;border-radius:8px}
+input,select{width:100%;padding:10px;background:white;color:var(--ink);min-width:0}
+input:focus,select:focus{outline:2px solid #a9bbff;border-color:var(--blue)}
+.field{min-width:0}
+.help,.muted,.footer-note{color:var(--muted)}
+.help{font-size:11px;line-height:1.4;margin-top:5px}
+button{padding:10px 13px;background:white;color:var(--ink);font-size:13px;font-weight:650;cursor:pointer}
+button:hover{border-color:var(--blue)}
+button.primary{background:var(--blue);border-color:var(--blue);color:white}
+button.danger{color:var(--red)}
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.metric{border:1px solid var(--line);border-radius:12px;padding:15px;min-width:0}
+.metric-label{font-size:12px;color:var(--muted);font-weight:650}
+.metric-value{font-size:clamp(20px,2.5vw,28px);font-weight:800;margin:7px 0;overflow-wrap:anywhere}
+.metric-note{font-size:11px;color:var(--muted)}
+.platform-card{border:1px solid var(--line);border-radius:13px;padding:15px;min-width:0}
+.platform-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.platform-toggle{display:flex;align-items:center;gap:5px;white-space:nowrap;margin:0}
+.platform-toggle input{width:auto}
+.sub{font-size:12px;color:var(--muted);margin:-5px 0 13px}
+.cost-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.capacity{padding:10px 12px;border-radius:9px;font-size:12px;line-height:1.5;margin:12px 0}
+.capacity.ok{background:var(--greenbg);color:var(--green)}
+.capacity.warn{background:var(--redbg);color:var(--red)}
+.status{display:inline-block;border-radius:20px;padding:4px 8px;font-size:11px;font-weight:750;background:#edf0f5;color:#4e5a6d}
+.status.best{background:var(--greenbg);color:var(--green)}
+.status.warn{background:var(--redbg);color:var(--red)}
+.note-box{background:#edf2ff;border-radius:10px;padding:13px 14px;font-size:13px;line-height:1.55}
+.chart-wrap{position:relative;width:100%}
+canvas{display:block;width:100%;height:350px}
+.chart-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.legend-item{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:20px;padding:7px 10px;font-size:12px;background:white}
+.legend-item.off{opacity:.4;text-decoration:line-through}
+.swatch{width:10px;height:10px;border-radius:50%;display:inline-block}
+.tooltip{display:none;position:absolute;z-index:3;pointer-events:none;background:#14213b;color:white;border-radius:9px;padding:9px 11px;font-size:12px;box-shadow:0 5px 18px #0002;max-width:250px;line-height:1.6}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:11px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+th:first-child,td:first-child{text-align:left}
+tr.cheapest{background:var(--greenbg)}
+tr.cheapest td:first-child{font-weight:800;color:var(--green)}
+.breakdown{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.breakdown-card{border:1px solid var(--line);border-radius:12px;padding:15px;min-width:0}
+.big{font-size:24px;font-weight:800;margin:7px 0}
+.bar{height:8px;border-radius:9px;background:#e9edf4;overflow:hidden;margin:10px 0}
+.bar div{height:100%;border-radius:9px}
+.source-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.source-item{border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
+.source-item a{color:var(--blue);font-weight:700;font-size:13px}
+.source-item .field{margin-top:10px}
+.footer-note{font-size:12px;line-height:1.65}
+hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+@media(max-width:850px){.inputs,.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){
+ main{padding:13px 9px 30px}.panel{padding:14px}
+ .platforms,.breakdown,.source-grid{grid-template-columns:1fr}
+ .cost-fields{gap:9px}canvas{height:280px}
+}
+@media print{
+ body{background:white}header{background:white;color:black}
+ header p{color:#444}main{padding:8px 0}
+ .panel{box-shadow:none;break-inside:avoid}
+ .toolbar,.no-print{display:none!important}
+ canvas{height:250px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>eCommerce TCO Planner</h1>
+  <p>Compare ecommerce vendors, packages, product listing limits and total cost of ownership.
+  Model your store as it grows and see which option fits your catalogue and budget.</p>
+  <p><b>Built with AI. Always check the outputs.</b></p> 
+</header>
+
+<main>
+<section class="panel">
+  <h2>1. Business scenario</h2>
+  <div class="grid inputs">
+    <div class="field"><label for="scenarioName">Scenario name</label><input id="scenarioName" value="Micro-business base case"></div>
+    <div class="field"><label for="revenue">Starting monthly sales (£)</label><input id="revenue" type="number" min="0" step="100" value="3000"></div>
+    <div class="field"><label for="orders">Starting orders per month</label><input id="orders" type="number" min="0" step="1" value="60"></div>
+    <div class="field"><label for="products">Products you need to list</label><input id="products" type="number" min="0" step="1" value="100"></div>
+    <div class="field"><label for="years">Forecast period</label><select id="years"><option value="1">1 year</option><option value="2">2 years</option><option value="3" selected>3 years</option><option value="4">4 years</option><option value="5">5 years</option></select></div>
+    <div class="field"><label for="growth">Monthly sales growth</label><select id="growth"><option value="0">0%</option><option value="0.01">1%</option><option value="0.02" selected>2%</option><option value="0.03">3%</option><option value="0.05">5%</option></select></div>
+    <div class="field"><label for="hourly">Value of owner time (£/hour)</label><input id="hourly" type="number" min="0" step="1" value="20"></div>
+    <div class="field"><label for="ownerTime">Include owner time in TCO?</label><select id="ownerTime"><option value="exclude">No — cash costs only</option><option value="include" selected>Yes — include estimated time</option></select></div>
+    <div class="field"><label for="feeBasis">Payment fee basis</label><select id="feeBasis"><option value="gross" selected>Gross sales</option><option value="net">Sales less 2% allowance</option></select><div class="help">Net mode is a rough sensitivity assumption, not tax accounting.</div></div>
+  </div>
+  <hr>
+  <div class="toolbar">
+    <button class="primary" id="recalculate">Recalculate</button>
+    <button id="exportCsv">Export results CSV</button>
+    <button id="saveJson">Save scenario JSON</button>
+    <button id="loadJson">Load scenario JSON</button>
+    <input id="jsonFile" type="file" accept=".json,application/json" hidden>
+    <button id="print">Print / save PDF</button>
+    <button class="danger" id="reset">Reset defaults</button>
+  </div>
+  <p class="footer-note">Prices and plan capacities can change by region, billing term and product type. Treat the supplied figures as editable planning assumptions and verify them with the vendor before committing.</p>
+</section>
+
+<section class="panel">
+  <h2>2. Choose a vendor and package</h2>
+  <p class="muted">Each vendor has a package selector, an editable monthly price, a product listing limit and editable operating costs. Changing package updates its default assumptions. You can then adjust the values to match the offer you are considering.</p>
+  <div class="grid platforms" id="platformCards"></div>
+</section>
+
+<section class="panel">
+  <h2>3. Summary</h2>
+  <div class="grid metrics" id="metrics"></div>
+  <div class="note-box" id="recommendation" style="margin-top:14px"></div>
+</section>
+
+<section class="panel">
+  <h2>4. Cumulative total cost over time</h2>
+  <p class="muted">Includes setup, recurring costs, estimated payment fees and owner time if enabled. Toggle the legend to show or hide a platform.</p>
+  <div class="chart-wrap" id="chartWrap">
+    <canvas id="tcoChart" role="img" aria-label="Cumulative ecommerce platform costs over time"></canvas>
+    <div class="tooltip" id="chartTooltip"></div>
+  </div>
+  <div class="chart-legend" id="chartLegend"></div>
+</section>
+
+<section class="panel">
+  <h2>5. Platform comparison</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Vendor / package</th><th>Listing capacity</th><th>Setup</th><th>Year 1 cash cost</th><th>Year 1 TCO</th><th>Full-period TCO</th><th>Average / month</th><th>TCO / sales</th></tr></thead>
+    <tbody id="resultsTable"></tbody>
+  </table></div>
+  <p class="footer-note">The lowest-cost row is highlighted only among selected packages that can accommodate your stated catalogue. If none can accommodate it, the planner will tell you that rather than recommending an undersized package.</p>
+</section>
+
+<section class="panel">
+  <h2>6. Cost breakdown</h2>
+  <div class="breakdown" id="breakdown"></div>
+</section>
+
+<section class="panel">
+  <h2>7. Break-even estimate</h2>
+  <p class="muted">Estimates monthly sales needed to match the lowest-cost eligible package, using the fixed-cost difference and variable payment fees. Order value is assumed to remain constant.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Vendor / package</th><th>Monthly sales estimate</th><th>Orders / month</th><th>Interpretation</th></tr></thead>
+    <tbody id="breakEvenTable"></tbody>
+  </table></div>
+  <p class="footer-note">This is a simplified estimate. It is not meaningful if the options have effectively identical variable fees or if the estimated sales level is negative.</p>
+</section>
+
+<section class="panel">
+  <h2>8. Pricing and product-limit references</h2>
+  <p class="muted">Use the vendor links to verify current prices and product limits. Enter the date you last checked each source.</p>
+  <div class="source-grid" id="sources"></div>
+</section>
+
+<section class="panel">
+  <h2>Methodology and limitations</h2>
+  <ul class="footer-note">
+    <li>Package prices and capacities are starting assumptions, not guaranteed live quotes. Verify your selected plan and its current product limits.</li>
+    <li>Product listing capacity means the number of distinct products your store can list, not inventory quantity, variants, SKUs, staff accounts, or orders.</li>
+    <li>Shopify and self-hosted WooCommerce generally support unlimited product listings; Squarespace limits depend on site version. Big Cartel plan capacities differ substantially. Wix package features and limits should be verified for your exact plan.</li>
+    <li>Setup is charged once. Monthly fixed costs and estimated owner time are charged each month.</li>
+    <li>Sales and order volume grow at the selected monthly rate. Average order value remains constant.</li>
+    <li>Payment fees are modeled as a percentage of sales plus a fixed fee per order. An extra platform transaction rate can be entered separately.</li>
+    <li>Taxes, VAT, shipping, inventory, advertising, chargebacks, currency conversion and paid add-ons are not automatically included. Add them to your assumptions where relevant.</li>
+    <li>Owner time represents estimated platform administration and maintenance, not all business labor.</li>
+  </ul>
+</section>
+</main>
+
+<script>
+"use strict";
+
+/* Declare helpers before any call to clone(). */
+const $ = id => document.getElementById(id);
+const clone = obj => JSON.parse(JSON.stringify(obj));
+const nonnegative = n => Math.max(0, Number(n) || 0);
+const money = n => new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:0}).format(Number.isFinite(n)?n:0);
+const money2 = n => new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:2}).format(Number.isFinite(n)?n:0);
+const pct = n => `${(Number.isFinite(n)?n*100:0).toFixed(1)}%`;
+const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+const COLORS = {
+  shopify:"#315ee7",woocommerce:"#8055c9",wix:"#008c95",
+  squarespace:"#d47728",bigcartel:"#d14b72"
+};
+
+/*
+  Package prices and listing capacities are editable starting assumptions.
+  "Unlimited" is represented by Infinity internally and shown as Unlimited.
+  Prices are approximate scenario defaults, not a live vendor price feed.
+*/
+const PLAN_PRESETS = {
+  shopify: [
+    {plan:"Basic",monthly:19,limit:Infinity,rate:0.020,fixed:0.25,platform:0,apps:10,hosting:0,hours:2},
+    {plan:"Grow",monthly:49,limit:Infinity,rate:0.017,fixed:0.25,platform:0,apps:15,hosting:0,hours:2},
+    {plan:"Advanced",monthly:259,limit:Infinity,rate:0.015,fixed:0.25,platform:0,apps:25,hosting:0,hours:2.5}
+  ],
+  woocommerce: [
+    {plan:"Self-hosted starter",monthly:12,limit:Infinity,rate:0.015,fixed:0.25,platform:0,apps:10,hosting:12,hours:4},
+    {plan:"Self-hosted standard",monthly:25,limit:Infinity,rate:0.015,fixed:0.25,platform:0,apps:20,hosting:25,hours:3.5},
+    {plan:"Managed / premium",monthly:60,limit:Infinity,rate:0.015,fixed:0.25,platform:0,apps:25,hosting:35,hours:2.5}
+  ],
+  wix: [
+    {plan:"Core",monthly:16,limit:Infinity,rate:0.019,fixed:0.20,platform:0,apps:5,hosting:0,hours:2},
+    {plan:"Business",monthly:25,limit:Infinity,rate:0.019,fixed:0.20,platform:0,apps:10,hosting:0,hours:2},
+    {plan:"Business Elite",monthly:119,limit:Infinity,rate:0.019,fixed:0.20,platform:0,apps:20,hosting:0,hours:2}
+  ],
+  squarespace: [
+    {plan:"Basic",monthly:16,limit:10000,rate:0.029,fixed:0.30,platform:0,apps:5,hosting:0,hours:2},
+    {plan:"Core",monthly:23,limit:10000,rate:0.029,fixed:0.30,platform:0,apps:8,hosting:0,hours:2},
+    {plan:"Plus",monthly:39,limit:10000,rate:0.029,fixed:0.30,platform:0,apps:12,hosting:0,hours:2},
+    {plan:"Advanced",monthly:99,limit:10000,rate:0.029,fixed:0.30,platform:0,apps:15,hosting:0,hours:2}
+  ],
+  bigcartel: [
+    {plan:"Gold",monthly:0,limit:5,rate:0.029,fixed:0.30,platform:0,apps:0,hosting:0,hours:1.5},
+    {plan:"Platinum",monthly:15,limit:50,rate:0.029,fixed:0.30,platform:0,apps:0,hosting:0,hours:1.5},
+    {plan:"Diamond",monthly:30,limit:500,rate:0.029,fixed:0.30,platform:0,apps:0,hosting:0,hours:1.5}
+  ]
+};
+
+const DEFAULTS = {
+  shopify:{
+    name:"Shopify",plan:"Basic",setup:50,monthly:19,limit:Infinity,
+    apps:10,hosting:0,paymentRate:0.020,fixedFee:0.25,platformRate:0,hours:2,
+    source:"https://www.shopify.com/uk/pricing",limitSource:"https://help.shopify.com/en/manual/intro-to-shopify/pricing-plans/plans-features/features-on-all-plans",checked:""
+  },
+  woocommerce:{
+    name:"WooCommerce",plan:"Self-hosted starter",setup:120,monthly:12,limit:Infinity,
+    apps:10,hosting:12,paymentRate:0.015,fixedFee:0.25,platformRate:0,hours:4,
+    source:"https://woocommerce.com/",limitSource:"https://woocommerce.com/",checked:""
+  },
+  wix:{
+    name:"Wix",plan:"Core",setup:30,monthly:16,limit:Infinity,
+    apps:5,hosting:0,paymentRate:0.019,fixedFee:0.20,platformRate:0,hours:2,
+    source:"https://www.wix.com/upgrade/website",limitSource:"https://support.wix.com/",checked:""
+  },
+  squarespace:{
+    name:"Squarespace",plan:"Basic",setup:30,monthly:16,limit:10000,
+    apps:5,hosting:0,paymentRate:0.029,fixedFee:0.30,platformRate:0,hours:2,
+    source:"https://www.squarespace.com/pricing",limitSource:"https://support.squarespace.com/hc/en-us/articles/205811338-Add-products-to-your-store",checked:""
+  },
+  bigcartel:{
+    name:"Big Cartel",plan:"Platinum",setup:0,monthly:15,limit:50,
+    apps:0,hosting:0,paymentRate:0.029,fixedFee:0.30,platformRate:0,hours:1.5,
+    source:"https://www.bigcartel.com/pricing",limitSource:"https://www.bigcartel.com/pricing",checked:""
+  }
+};
+
+let costs = clone(DEFAULTS);
+let selected = new Set(Object.keys(DEFAULTS));
+let visible = new Set(Object.keys(DEFAULTS));
+let results = [];
+let chartPoints = [];
+let activeHover = null;
+
+function getRevenue(){return nonnegative($("revenue").value)}
+function getOrders(){return nonnegative($("orders").value)}
+function getProducts(){return Math.floor(nonnegative($("products").value))}
+function getYears(){return Math.max(1,Math.min(5,Number($("years").value)||3))}
+function getGrowth(){return Math.max(-0.5,Math.min(1,Number($("growth").value)||0))}
+function getHourly(){return nonnegative($("hourly").value)}
+function limitText(limit){return limit===Infinity||limit===null?"Unlimited":Number(limit).toLocaleString("en-GB")}
+
+function scenarioObject(){
+  return {
+    version:3,name:$("scenarioName").value,
+    inputs:{
+      revenue:getRevenue(),orders:getOrders(),products:getProducts(),years:getYears(),
+      growth:getGrowth(),hourly:getHourly(),ownerTime:$("ownerTime").value,feeBasis:$("feeBasis").value
+    },
+    selected:[...selected],visible:[...visible],costs:clone(costs)
+  };
+}
+
+function planPreset(key,planName){
+  return PLAN_PRESETS[key].find(p=>p.plan===planName)||PLAN_PRESETS[key][0];
+}
+function applyPreset(key,planName){
+  const preset=planPreset(key,planName);
+  const current=costs[key];
+  current.plan=preset.plan;
+  current.monthly=preset.monthly;
+  current.limit=preset.limit;
+  current.paymentRate=preset.rate;
+  current.fixedFee=preset.fixed;
+  current.platformRate=preset.platform;
+  current.apps=preset.apps;
+  current.hosting=preset.hosting;
+  current.hours=preset.hours;
+}
+
+function costField(key,field,label,value,help,step="1"){
+  return `<div class="field">
+    <label for="${key}-${field}">${label}</label>
+    <input id="${key}-${field}" type="number" min="0" step="${step}" data-cost="${key}:${field}" value="${value}">
+    <div class="help">${help}</div></div>`;
+}
+
+function renderPlatformCards(){
+  $("platformCards").innerHTML=Object.entries(costs).map(([key,p])=>{
+    const presetOptions=PLAN_PRESETS[key].map(option=>
+      `<option value="${escapeHtml(option.plan)}" ${option.plan===p.plan?"selected":""}>${escapeHtml(option.plan)}</option>`
+    ).join("");
+    const fits=p.limit===Infinity||getProducts()<=p.limit;
+    return `<article class="platform-card">
+      <div class="platform-head">
+        <div><h3>${escapeHtml(p.name)}</h3><div class="sub">Vendor package and cost assumptions</div></div>
+        <label class="platform-toggle"><input type="checkbox" data-select="${key}" ${selected.has(key)?"checked":""}> Compare</label>
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label for="${key}-plan">Package / plan</label>
+        <select id="${key}-plan" data-plan="${key}">${presetOptions}</select>
+      </div>
+      <div class="cost-fields">
+        ${costField(key,"monthly","Package price (£/mo)",p.monthly,"Recurring package subscription.")}
+        ${costField(key,"limit","Product listing limit",p.limit===Infinity?"":p.limit,"Enter a number, or leave blank for unlimited.")}
+        ${costField(key,"setup","One-off setup (£)",p.setup,"Migration, setup or theme costs.")}
+        ${costField(key,"apps","Apps / extensions (£/mo)",p.apps,"Paid apps and extensions.")}
+        ${costField(key,"hosting","Hosting / maintenance (£/mo)",p.hosting,"Hosting and maintenance if separate.")}
+        ${costField(key,"paymentRate","Processor fee (%)",p.paymentRate*100,"Percentage charged by the payment provider.","0.1")}
+        ${costField(key,"fixedFee","Fee per order (£)",p.fixedFee,"Fixed transaction fee.","0.01")}
+        ${costField(key,"platformRate","Extra platform fee (%)",p.platformRate*100,"Extra platform transaction fee, if applicable.","0.1")}
+        ${costField(key,"hours","Owner time (hours/mo)",p.hours,"Estimated administration and maintenance.","0.5")}
+      </div>
+      <div class="capacity ${fits?"ok":"warn"}" data-capacity="${key}">
+        ${fits?`Capacity: <strong>${limitText(p.limit)} products</strong>. Your catalogue of ${getProducts()} fits this package.`:
+        `<strong>Catalogue exceeds this package's limit.</strong> Capacity: ${limitText(p.limit)} products; you need ${getProducts()}. Select a larger package or adjust the limit if verified.`}
+      </div>
+      <div class="help">Package details: <a href="${escapeHtml(p.source)}" target="_blank" rel="noopener noreferrer">pricing</a> · <a href="${escapeHtml(p.limitSource)}" target="_blank" rel="noopener noreferrer">product limits</a></div>
+    </article>`;
+  }).join("");
+
+  $("platformCards").querySelectorAll("[data-plan]").forEach(el=>{
+    el.addEventListener("change",()=>{
+      applyPreset(el.dataset.plan,el.value);
+      renderPlatformCards();renderSources();renderAll();
+    });
+  });
+
+  $("platformCards").querySelectorAll("[data-cost]").forEach(el=>{
+    el.addEventListener("change",()=>{
+      const [key,field]=el.dataset.cost.split(":");
+      if(field==="limit"){
+        const value=el.value.trim();
+        costs[key].limit=value===""?Infinity:Math.floor(nonnegative(value));
+      }else{
+        let value=nonnegative(el.value);
+        if(field==="paymentRate"||field==="platformRate")value/=100;
+        costs[key][field]=value;
+      }
+      renderPlatformCards();renderAll();
+    });
+  });
+
+  $("platformCards").querySelectorAll("[data-select]").forEach(el=>{
+    el.addEventListener("change",()=>{
+      const key=el.dataset.select;
+      if(el.checked)selected.add(key);else selected.delete(key);
+      if(!selected.size){selected.add(key);el.checked=true}
+      visible=new Set([...visible].filter(k=>selected.has(k)));
+      if(!visible.size)visible=new Set(selected);
+      renderAll();
+    });
+  });
+}
+
+function makeForecast(){
+  const months=[];
+  let sales=getRevenue(),orders=getOrders();
+  for(let i=1;i<=getYears()*12;i++){
+    months.push({month:i,sales,orders,feeBase:sales*($("feeBasis").value==="net"?0.98:1)});
+    sales*=1+getGrowth();orders*=1+getGrowth();
+  }
+  return {
+    months,years:getYears(),hourly:getHourly(),includeTime:$("ownerTime").value==="include",
+    revenue:getRevenue(),orders:getOrders(),growth:getGrowth(),feeBasis:$("feeBasis").value
+  };
+}
+
+function calculatePlatform(key,f){
+  const p=costs[key],fixedMonthly=p.monthly+p.apps+p.hosting;
+  const ownerMonthly=f.includeTime?p.hours*f.hourly:0;
+  let cash=p.setup,ownerCost=0,fees=0,cumulative=p.setup;
+  let firstYearCash=p.setup,firstYearTCO=p.setup;
+  const points=[{month:0,tco:p.setup,cash,ownerCost,fees}];
+
+  f.months.forEach((m,i)=>{
+    const monthlyFees=m.feeBase*(p.paymentRate+p.platformRate)+m.orders*p.fixedFee;
+    const monthlyCash=fixedMonthly+monthlyFees;
+    cash+=monthlyCash;ownerCost+=ownerMonthly;fees+=monthlyFees;
+    cumulative+=monthlyCash+ownerMonthly;
+    if(i<12){firstYearCash+=monthlyCash;firstYearTCO+=monthlyCash+ownerMonthly}
+    points.push({month:i+1,tco:cumulative,cash,ownerCost,fees});
+  });
+
+  const totalSales=f.months.reduce((s,m)=>s+m.sales,0);
+  return {
+    key,name:p.name,plan:p.plan,setup:p.setup,limit:p.limit,fits:p.limit===Infinity||getProducts()<=p.limit,
+    fixedMonthly,ownerMonthly,cashTotal:cash,ownerCost,fees,tco:cumulative,
+    firstYearCash,firstYearTCO,averageMonthly:cumulative/f.months.length,
+    totalSales,tcoToSales:totalSales>0?cumulative/totalSales:0,points
+  };
+}
+
+function renderMetrics(f,sorted,eligible){
+  const best=eligible[0];
+  const sales=f.months.reduce((s,m)=>s+m.sales,0);
+  const orders=f.months.reduce((s,m)=>s+m.orders,0);
+  const items=[
+    ["Lowest eligible TCO",best?money(best.tco):"—",best?`${best.name} · ${best.plan}`:"No package fits your catalogue"],
+    ["Average monthly TCO",best?money2(best.averageMonthly):"—","Lowest eligible package"],
+    ["Forecast sales",money(sales),`${f.years}-year sales projection`],
+    ["Forecast orders",Math.round(orders).toLocaleString("en-GB"),"Estimated total orders"]
+  ];
+  $("metrics").innerHTML=items.map(([l,v,n])=>`<div class="metric"><div class="metric-label">${l}</div><div class="metric-value">${v}</div><div class="metric-note">${escapeHtml(n)}</div></div>`).join("");
+
+  let text;
+  if(!best){
+    text=`<strong>No selected package can accommodate your catalogue of ${getProducts()} products.</strong> Increase a package limit after verification, select a suitable package, or reduce the catalogue assumption. No cheapest-package recommendation is made.`;
+  }else{
+    const next=eligible[1];
+    text=`<strong>${escapeHtml(best.name)} — ${escapeHtml(best.plan)}</strong> has the lowest projected TCO among selected packages that fit your ${getProducts()}-product catalogue: <strong>${money(best.tco)}</strong> over ${f.years} year${f.years===1?"":"s"}.`;
+    if(next)text+=` The estimated saving versus ${escapeHtml(next.name)} — ${escapeHtml(next.plan)} is ${money(next.tco-best.tco)} over the forecast period.`;
+    text+=" Cost alone does not measure features, usability, design, integrations, support or the effort required to maintain your store.";
+  }
+  $("recommendation").innerHTML=text;
+}
+
+function renderTable(sorted){
+  $("resultsTable").innerHTML=sorted.map(r=>`
+    <tr class="${r.fits&&sorted.filter(x=>x.fits).sort((a,b)=>a.tco-b.tco)[0]?.key===r.key?"cheapest":""}">
+      <td>${escapeHtml(r.name)} — ${escapeHtml(r.plan)}
+        ${r.fits?"":'<span class="status warn">Over limit</span>'}
+        ${r.fits&&sorted.filter(x=>x.fits).sort((a,b)=>a.tco-b.tco)[0]?.key===r.key?'<span class="status best">Lowest TCO</span>':""}
+      </td>
+      <td>${limitText(r.limit)}</td><td>${money(r.setup)}</td><td>${money(r.firstYearCash)}</td>
+      <td>${money(r.firstYearTCO)}</td><td><strong>${money(r.tco)}</strong></td>
+      <td>${money2(r.averageMonthly)}</td><td>${pct(r.tcoToSales)}</td>
+    </tr>`).join("")||'<tr><td colspan="8">Select at least one package.</td></tr>';
+}
+
+function renderBreakdown(sorted){
+  const max=Math.max(1,...sorted.map(r=>r.tco));
+  $("breakdown").innerHTML=sorted.map(r=>`
+    <div class="breakdown-card">
+      <strong>${escapeHtml(r.name)} — ${escapeHtml(r.plan)}</strong>
+      <div class="big">${money(r.tco)}</div><div class="muted" style="font-size:12px">Total forecast TCO</div>
+      <div class="bar"><div style="width:${Math.max(0,Math.min(100,r.tco/max*100))}%;background:${COLORS[r.key]}"></div></div>
+      <table><tbody>
+        <tr><td>Setup</td><td>${money(r.setup)}</td></tr>
+        <tr><td>Recurring fixed costs</td><td>${money(r.fixedMonthly*getYears()*12)}</td></tr>
+        <tr><td>Payment / platform fees</td><td>${money(r.fees)}</td></tr>
+        <tr><td>Owner time</td><td>${money(r.ownerCost)}</td></tr>
+      </tbody></table>
+      <div class="capacity ${r.fits?"ok":"warn"}">${r.fits?"Catalogue fits package.":"Catalogue exceeds package limit."} Capacity: ${limitText(r.limit)} products.</div>
+    </div>`).join("");
+}
+
+function renderBreakEven(f,eligible){
+  const best=eligible[0];
+  if(!best){$("breakEvenTable").innerHTML='<tr><td colspan="4">No selected package fits the catalogue.</td></tr>';return}
+  const pBest=costs[best.key],n=f.months.length;
+  const factor=f.months.reduce((s,m)=>s+Math.pow(1+f.growth,m.month-1),0);
+  const feeMultiplier=f.feeBasis==="net"?0.98:1;
+  const bestFixed=pBest.setup+(pBest.monthly+pBest.apps+pBest.hosting+(f.includeTime?pBest.hours*f.hourly:0))*n;
+  const bestVar=(pBest.paymentRate+pBest.platformRate)*feeMultiplier+(f.revenue>0?pBest.fixedFee*f.orders/f.revenue:0);
+
+  $("breakEvenTable").innerHTML=eligible.map(r=>{
+    if(r.key===best.key)return `<tr><td>${escapeHtml(r.name)} — ${escapeHtml(r.plan)}</td><td>—</td><td>—</td><td>Lowest projected TCO among eligible packages</td></tr>`;
+    const p=costs[r.key];
+    const fixed=p.setup+(p.monthly+p.apps+p.hosting+(f.includeTime?p.hours*f.hourly:0))*n;
+    const variable=(p.paymentRate+p.platformRate)*feeMultiplier+(f.revenue>0?p.fixedFee*f.orders/f.revenue:0);
+    const slope=(variable-bestVar)*factor;
+    const intercept=fixed-bestFixed;
+    if(Math.abs(slope)<1e-10)return `<tr><td>${escapeHtml(r.name)} — ${escapeHtml(r.plan)}</td><td>—</td><td>—</td><td>Variable costs too similar for a stable estimate</td></tr>`;
+    const be=-intercept/slope;
+    if(!Number.isFinite(be)||be<0)return `<tr><td>${escapeHtml(r.name)} — ${escapeHtml(r.plan)}</td><td>—</td><td>—</td><td>No positive break-even sales level in this model</td></tr>`;
+    const orders=f.revenue>0?be*f.orders/f.revenue:null;
+    return `<tr><td>${escapeHtml(r.name)} — ${escapeHtml(r.plan)}</td><td>${money2(be)}</td><td>${orders===null?"—":Math.round(orders).toLocaleString("en-GB")}</td><td>Estimated first-month sales level</td></tr>`;
+  }).join("");
+}
+
+function renderLegend(sorted){
+  $("chartLegend").innerHTML=sorted.map(r=>`<button class="legend-item ${visible.has(r.key)?"":"off"}" data-visible="${r.key}"><span class="swatch" style="background:${COLORS[r.key]}"></span>${escapeHtml(r.name)} — ${escapeHtml(r.plan)}</button>`).join("");
+  $("chartLegend").querySelectorAll("[data-visible]").forEach(btn=>btn.addEventListener("click",()=>{
+    const k=btn.dataset.visible;
+    if(visible.has(k)){if(visible.size>1)visible.delete(k)}else visible.add(k);
+    renderLegend(sorted);renderChart(sorted);
+  }));
+}
+
+function renderChart(sorted){
+  const canvas=$("tcoChart"),ctx=canvas.getContext("2d"),rect=canvas.getBoundingClientRect();
+  const dpr=Math.max(1,window.devicePixelRatio||1),w=Math.max(300,rect.width),h=Math.max(240,rect.height);
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  const pad={left:67,right:18,top:18,bottom:42},pw=w-pad.left-pad.right,ph=h-pad.top-pad.bottom;
+  const shown=sorted.filter(r=>visible.has(r.key));
+  const maxVal=Math.max(1,...shown.flatMap(r=>r.points.map(p=>p.tco)))*1.08,maxMonth=getYears()*12;
+  const x=m=>pad.left+m/maxMonth*pw,y=v=>pad.top+ph-v/maxVal*ph;
+  ctx.font="11px system-ui";ctx.textAlign="right";ctx.textBaseline="middle";
+  for(let i=0;i<=4;i++){
+    const val=maxVal*i/4,yy=y(val);
+    ctx.strokeStyle="#e6ebf2";ctx.beginPath();ctx.moveTo(pad.left,yy);ctx.lineTo(w-pad.right,yy);ctx.stroke();
+    ctx.fillStyle="#657187";ctx.fillText(money(val),pad.left-9,yy);
+  }
+  ctx.textAlign="center";ctx.textBaseline="top";
+  for(let yr=0;yr<=getYears();yr++){
+    const xx=x(yr*12);ctx.strokeStyle="#edf0f5";ctx.beginPath();ctx.moveTo(xx,pad.top);ctx.lineTo(xx,pad.top+ph);ctx.stroke();
+    ctx.fillStyle="#657187";ctx.fillText(yr===0?"Start":`Year ${yr}`,xx,pad.top+ph+10);
+  }
+  shown.forEach(r=>{
+    ctx.strokeStyle=COLORS[r.key];ctx.lineWidth=2.5;ctx.lineJoin="round";ctx.beginPath();
+    r.points.forEach((p,i)=>i?ctx.lineTo(x(p.month),y(p.tco)):ctx.moveTo(x(p.month),y(p.tco)));
+    ctx.stroke();
+  });
+  ctx.fillStyle="#657187";ctx.textAlign="center";ctx.textBaseline="bottom";ctx.fillText("Forecast time",pad.left+pw/2,h-3);
+  chartPoints=shown.map(r=>({key:r.key,name:`${r.name} — ${r.plan}`,points:r.points}));
+  activeHover={x,y,pad,pw,ph,maxMonth,w,h};
+}
+
+function renderSources(){
+  $("sources").innerHTML=Object.entries(costs).map(([key,p])=>`
+    <div class="source-item">
+      <strong>${escapeHtml(p.name)} — ${escapeHtml(p.plan)}</strong><br>
+      <a href="${escapeHtml(p.source)}" target="_blank" rel="noopener noreferrer">Official pricing page ↗</a>
+      <div class="field"><label for="src-${key}">Pricing URL</label><input id="src-${key}" data-source="${key}" value="${escapeHtml(p.source)}"></div>
+      <div class="field"><label for="limsrc-${key}">Product-limit reference URL</label><input id="limsrc-${key}" data-limitsource="${key}" value="${escapeHtml(p.limitSource)}"></div>
+      <div class="field"><label for="date-${key}">Date last verified</label><input id="date-${key}" data-checked="${key}" type="date" value="${escapeHtml(p.checked||"")}"></div>
+    </div>`).join("");
+  $("sources").querySelectorAll("[data-source]").forEach(el=>el.addEventListener("change",()=>{costs[el.dataset.source].source=el.value.trim();renderSources()}));
+  $("sources").querySelectorAll("[data-limitsource]").forEach(el=>el.addEventListener("change",()=>{costs[el.dataset.limitsource].limitSource=el.value.trim()}));
+  $("sources").querySelectorAll("[data-checked]").forEach(el=>el.addEventListener("change",()=>{costs[el.dataset.checked].checked=el.value}));
+}
+
+function renderAll(){
+  const f=makeForecast();
+  results=[...selected].filter(k=>costs[k]).map(k=>calculatePlatform(k,f)).sort((a,b)=>a.tco-b.tco);
+  const eligible=results.filter(r=>r.fits).sort((a,b)=>a.tco-b.tco);
+  renderMetrics(f,results,eligible);renderTable(results);renderBreakdown(results);
+  renderBreakEven(f,eligible);renderLegend(results);renderChart(results);
+}
+
+function csvCell(v){return `"${String(v??"").replace(/"/g,'""')}"`}
+function downloadBlob(filename,content,type){
+  const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
+function exportCsv(){
+  const f=makeForecast();
+  const rows=[
+    ["Scenario",$("scenarioName").value],["Starting monthly sales",f.revenue],
+    ["Starting monthly orders",f.orders],["Catalogue products",getProducts()],
+    ["Forecast years",f.years],["Monthly growth",f.growth],[],
+    ["Vendor","Package","Selected","Catalogue size","Listing limit","Capacity fits","Setup GBP","Year 1 cash GBP","Year 1 TCO GBP","Full-period TCO GBP","Average monthly TCO GBP","Forecast sales GBP","Fees GBP","Owner time GBP","TCO / sales"]
+  ];
+  results.forEach(r=>rows.push([r.name,r.plan,"Yes",getProducts(),limitText(r.limit),r.fits?"Yes":"No",r.setup,r.firstYearCash,r.firstYearTCO,r.tco,r.averageMonthly,r.totalSales,r.fees,r.ownerCost,r.tcoToSales]));
+  downloadBlob("commerce-cost-lab-results.csv",rows.map(row=>row.map(csvCell).join(",")).join("\r\n"),"text/csv;charset=utf-8");
+}
+function saveScenario(){downloadBlob("commerce-cost-lab-scenario.json",JSON.stringify(scenarioObject(),null,2),"application/json")}
+
+function applyScenario(data){
+  if(!data||typeof data!=="object"||!data.inputs||!data.costs)throw new Error("Invalid scenario file or missing inputs/costs.");
+  const i=data.inputs;
+  $("scenarioName").value=String(data.name||"Imported scenario");
+  $("revenue").value=nonnegative(i.revenue??3000);
+  $("orders").value=nonnegative(i.orders??60);
+  $("products").value=Math.floor(nonnegative(i.products??100));
+  $("years").value=String(Math.max(1,Math.min(5,Number(i.years)||3)));
+  $("growth").value=String(Math.max(-0.5,Math.min(1,Number(i.growth)||0)));
+  $("hourly").value=nonnegative(i.hourly??20);
+  $("ownerTime").value=i.ownerTime==="exclude"?"exclude":"include";
+  $("feeBasis").value=i.feeBasis==="net"?"net":"gross";
+
+  const next=clone(DEFAULTS);
+  for(const key of Object.keys(DEFAULTS)){
+    if(data.costs[key]&&typeof data.costs[key]==="object"){
+      next[key]={...next[key],...data.costs[key]};
+      const numeric=["setup","monthly","apps","hosting","paymentRate","fixedFee","platformRate","hours"];
+      numeric.forEach(field=>next[key][field]=nonnegative(next[key][field]));
+      const limit=next[key].limit;
+      next[key].limit=limit===""||limit===null||limit===undefined?Infinity:limit===Infinity?Infinity:nonnegative(limit);
+    }
+  }
+  costs=next;
+  const keys=Object.keys(DEFAULTS);
+  selected=new Set(Array.isArray(data.selected)?data.selected.filter(k=>keys.includes(k)):keys);
+  if(!selected.size)selected=new Set(keys);
+  visible=new Set(Array.isArray(data.visible)?data.visible.filter(k=>keys.includes(k)&&selected.has(k)):[...selected]);
+  if(!visible.size)visible=new Set(selected);
+  renderPlatformCards();renderSources();renderAll();
+}
+
+$("recalculate").addEventListener("click",renderAll);
+$("exportCsv").addEventListener("click",exportCsv);
+$("saveJson").addEventListener("click",saveScenario);
+$("loadJson").addEventListener("click",()=>$("jsonFile").click());
+$("jsonFile").addEventListener("change",async e=>{
+  const file=e.target.files&&e.target.files[0];if(!file)return;
+  try{applyScenario(JSON.parse(await file.text()));alert("Scenario loaded successfully.")}
+  catch(err){alert("Could not load scenario: "+err.message)}
+  finally{e.target.value=""}
+});
+$("print").addEventListener("click",()=>window.print());
+
+$("reset").addEventListener("click",()=>{
+  costs=clone(DEFAULTS);selected=new Set(Object.keys(DEFAULTS));visible=new Set(Object.keys(DEFAULTS));
+  $("scenarioName").value="Micro-business base case";$("revenue").value=3000;$("orders").value=60;$("products").value=100;
+  $("years").value=3;$("growth").value="0.02";$("hourly").value=20;
+  $("ownerTime").value="include";$("feeBasis").value="gross";
+  renderPlatformCards();renderSources();renderAll();
+});
+
+["scenarioName","revenue","orders","products","years","growth","hourly","ownerTime","feeBasis"].forEach(id=>{
+  $(id).addEventListener("input",()=>{
+    if(id==="products")renderPlatformCards();
+    renderAll();
+  });
+  $(id).addEventListener("change",()=>{
+    if(id==="products")renderPlatformCards();
+    renderAll();
+  });
+});
+
+$("tcoChart").addEventListener("pointermove",e=>{
+  if(!activeHover||!chartPoints.length)return;
+  const rect=$("tcoChart").getBoundingClientRect(),px=e.clientX-rect.left,py=e.clientY-rect.top;
+  const {x,y,pad,pw,ph,maxMonth,w,h}=activeHover;
+  if(px<pad.left||px>pad.left+pw||py<pad.top||py>pad.top+ph){$("chartTooltip").style.display="none";return}
+  const month=Math.max(0,Math.min(maxMonth,Math.round((px-pad.left)/pw*maxMonth)));
+  const lines=chartPoints.map(s=>{
+    const p=s.points[Math.min(month,s.points.length-1)];
+    return `<div><span style="color:${COLORS[s.key]}">●</span> ${escapeHtml(s.name)}: <strong>${money(p.tco)}</strong></div>`;
+  });
+  const tip=$("chartTooltip");
+  tip.innerHTML=`<strong>${month===0?"Start":`Month ${month}`}</strong>${lines.join("")}`;
+  tip.style.display="block";
+  tip.style.left=`${Math.min(w-255,Math.max(4,px+12))}px`;
+  tip.style.top=`${Math.max(4,Math.min(h-130,py-15))}px`;
+});
+$("tcoChart").addEventListener("pointerleave",()=>$("chartTooltip").style.display="none");
+let resizeTimer;
+window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>renderChart(results),100)});
+
+/* Initial render. DEFAULTS and clone are defined before this runs. */
+renderPlatformCards();
+renderSources();
+renderAll();
+</script>
+</body>
+</html>
